@@ -41,6 +41,6 @@ class CertificateSearch():
 
     def search(self, domain):
         '''
-        Look for the certificate of a specific domain.
+        Look for the certificates of a specific domain.
         '''
         return self.engine.search(domain)

@@ -7,6 +7,7 @@ import json
 import re
 import requests
 
+from crt.core.record import Certificates
 
 # pylint: disable=too-few-public-methods
 class Engine():
@@ -16,12 +17,13 @@ class Engine():
     USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/60.0'
 
     # This is how crt.sh accepts a search query
-    CRTSH_URL = 'https://crt.sh/?q={}&output=json'
+    CRTSH_URL = 'https://crt.sh/?q={}&output=json&exclude={}'
 
     # pylint: disable=no-self-use
-    def search(self, domain):
+    def search(self, domain, exclude_expired=False):
         '''
-        Query the certificate log from crt.sh.
+        Query the certificate log from crt.sh and return the search result. If
+        excluded_expired flag is set, only active certificates are returns.
         '''
         if not domain:
             return None
