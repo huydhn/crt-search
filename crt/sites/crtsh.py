@@ -5,11 +5,109 @@ searchable to the public.
 '''
 import json
 import re
+
+from datetime import datetime
 import requests
 
-from crt.core.record import Certificates
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
 
-# pylint: disable=too-few-public-methods
+
+# pylint: disable=too-many-instance-attributes
+class Certificate():
+    '''
+    A X509 certificate from crt.sh.
+    '''
+    def __init__(self):
+        '''
+        Initialize an empty certificate.
+        '''
+        self._cert_id = None
+        self._issuer = None
+        self._not_before = 0
+        self._not_after = 0
+
+        self._pem = None
+        self._decoded_pem = None
+
+    @property
+    def cert_id(self):
+        '''
+        Just return the ID from crt.sh.
+        '''
+        return self._cert_id
+
+    @cert_id.setter
+    def cert_id(self, cert_id):
+        '''
+        This ID can be used to download the actual certificate later on.
+        '''
+        self._cert_id = cert_id
+
+    @property
+    def issuer(self):
+        '''
+        Just return the issuer from crt.sh.
+        '''
+        return self._issuer
+
+    @issuer.setter
+    def issuer(self, issuer):
+        '''
+        The issuer from crt.sh. It will need to be parsed.
+        '''
+        self._issuer = issuer
+
+    @property
+    def not_before(self):
+        '''
+        Just return the epoch timestamps from crt.sh.
+        '''
+        return self._not_before
+
+    @not_before.setter
+    def not_before(self, not_before):
+        '''
+        The epoch timestamps from crt.sh.
+        '''
+        self._not_before = not_before
+
+    @property
+    def not_after(self):
+        '''
+        Just return the epoch timestamps from crt.sh.
+        '''
+        return self._not_after
+
+    @not_after.setter
+    def not_after(self, not_after):
+        '''
+        The epoch timestamps from crt.sh.
+        '''
+        self._not_after = not_after
+
+    @property
+    def pem(self):
+        '''
+        Just return the raw certificate.
+        '''
+        return self._pem
+
+    @pem.setter
+    def pem(self, pem):
+        '''
+        Save and decode the certificate.
+        '''
+        self._pem = pem
+        self._decode()
+
+    def _decode(self):
+        '''
+        Decode the x509 certificate and extract all the fields.
+        '''
+        self._decoded_pem = x509.load_pem_x509_certificate(self._pem, default_backend())
+
+
 class Engine():
     '''
     This is an unofficial scraper of crt.sh till there is an official API.
@@ -17,10 +115,12 @@ class Engine():
     USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/60.0'
 
     # This is how crt.sh accepts a search query
-    CRTSH_URL = 'https://crt.sh/?q={}&output=json&exclude={}'
+    CRTSH_SEARCH = 'https://crt.sh/?q={}&output=json&exclude={}'
+    # and this is how to download the certificate
+    CRTSH_DOWNLOAD = 'https://crt.sh/?d={}'
 
-    # pylint: disable=no-self-use
-    def search(self, domain, exclude_expired=False):
+    @staticmethod
+    def search(domain, exclude_expired=False):
         '''
         Query the certificate log from crt.sh and return the search result. If
         excluded_expired flag is set, only active certificates are returns.
@@ -28,7 +128,10 @@ class Engine():
         if not domain:
             return None
 
-        result = requests.get(Engine.CRTSH_URL.format(domain),
+        # crt.sh has the option to exlude all expired records
+        expired = 'expired' if exclude_expired else ''
+
+        result = requests.get(Engine.CRTSH_SEARCH.format(domain, expired),
                               headers={'User-Agent': Engine.USER_AGENT})
 
         if result.ok:
@@ -40,6 +143,47 @@ class Engine():
             content = '[{}]'.format(content)
 
             for record in json.loads(content):
-                yield record
+                # The record from crt.sh has the following format:
+                #
+                # {
+                #   'issuer_ca_id': 1397,
+                #   'issuer_name': 'C=C, O=O, OU=OU, CN=CN',
+                #   'name_value': 'github.com',
+                #   'min_cert_id': 560083457,
+                #   'min_entry_timestamp': '2018-06-29T14:20:38.527',
+                #   'not_before': '2018-06-27T00:00:00',
+                #   'not_after': '2020-06-20T12:00:00'
+                # }
+                #
+                crt = Certificate()
+                # Set all the available data from crt.sh. Note that the certificate
+                # itself can be downloaded later
+                crt.cert_id = record['min_cert_id']
+                crt.issuer = record['issuer_name']
+
+                # Need to convert the timestamps into epoch
+                tmp = datetime.strptime(record['not_before'], '%Y-%m-%dT%H:%M:%S').timestamp()
+                crt.not_before = int(tmp)
+
+                tmp = datetime.strptime(record['not_after'], '%Y-%m-%dT%H:%M:%S').timestamp()
+                crt.not_after = int(tmp)
+
+                yield crt
+
+        return None
+
+    @staticmethod
+    def get(cert_id):
+        '''
+        Download the cert with the provided ID.
+        '''
+        if not cert_id:
+            return None
+
+        result = requests.get(Engine.CRTSH_DOWNLOAD.format(cert_id),
+                              headers={'User-Agent': Engine.USER_AGENT})
+
+        if result.ok:
+            return result.content
 
         return None

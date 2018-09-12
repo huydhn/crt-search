@@ -17,7 +17,7 @@ setup(
     license='MIT',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    install_requires=['json', 'requests'],
+    install_requires=['json', 'requests', 'cryptography'],
     tests_require=['unittest2', 'coverage', 'nose', 'pytest-pep8'],
     packages=find_packages(),
     classifiers=[

@@ -1,36 +1,37 @@
 '''
-Test crt.sh
+Test querying various kinds of data from crt.sh.
 '''
-
-try:
-    import unittest2 as unittest
-# pylint: disable=bare-except
-except:
-    import unittest
-
-from crt.search import CertificateSearch
+import random
+import unittest
+from crt.sites.crtsh import Engine
 
 
 class SiteTest(unittest.TestCase):
     '''
-    Test querying crt.sh in various ways.
+    Test crt.sh specifically.
     '''
-    def setUp(self):
+    def test_search(self):
         '''
-        Setup the client to query crt.sh.
-        '''
-        self.engine = CertificateSearch(site='crt.sh')
-
-    def test_normal_query(self):
-        '''
-        Send a query search query to crt.sh.
+        Looking for some certificates from crt.sh.
         '''
         cases = [
             {
                 'query': 'github.com',
-                'description': 'Query a valid domain'
+                'description': 'Query certificates of a valid domain'
             },
         ]
 
         for case in cases:
-            got = [r for r in self.engine.search(case['query'])]
+            got = [r for r in Engine.search(case['query'])]
+
+            for rec in got:
+                self.assertTrue(rec.not_before, case['description'])
+
+            rec = random.choice(got)
+
+            pem = Engine.get(rec.cert_id)
+            self.assertIsNotNone(pem, case['description'])
+
+            rec.pem = pem
+            # pylint: disable=protected-access
+            self.assertIsNotNone(rec._decoded_pem, case['description'])

@@ -37,10 +37,9 @@ class CertificateSearch():
         on how to query the target site.
         '''
         self.module = SUPPORTED_SITES[self.site]()
-        self.engine = self.module.Engine()
 
     def search(self, domain):
         '''
         Look for the certificates of a specific domain.
         '''
-        return self.engine.search(domain)
+        return self.module.Engine.search(domain)
