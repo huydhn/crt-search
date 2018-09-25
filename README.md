@@ -13,7 +13,7 @@ The package can be installed from
 [PyPI](https://pypi.org/project/crt-search)
 
 ```
-pip install crt-search
+pip install certificate-search
 ```
 
 Usage

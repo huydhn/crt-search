@@ -18,7 +18,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     install_requires=['requests', 'cryptography'],
-    tests_require=['unittest2', 'coverage', 'nose', 'pytest-pep8', 'codecov'],
+    tests_require=['unittest2', 'coverage', 'nose', 'pytest-pep8', 'pytest-cov', 'codecov'],
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
