@@ -13,7 +13,14 @@ from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
 
-# pylint: disable=too-many-instance-attributes
+def decode_pem(pem):
+    '''
+    Decode the x509 certificate and extract all the fields.
+    '''
+    return x509.load_pem_x509_certificate(pem, default_backend())
+
+
+# pylint: disable=too-many-instance-attributes,invalid-name
 class Certificate():
     '''
     A X509 certificate from crt.sh.
@@ -22,27 +29,26 @@ class Certificate():
         '''
         Initialize an empty certificate.
         '''
-        self._cert_id = None
+        self._id = None
         self._issuer = None
         self._not_before = 0
         self._not_after = 0
 
         self._pem = None
-        self._decoded_pem = None
 
     @property
-    def cert_id(self):
+    def id(self):
         '''
         Just return the ID from crt.sh.
         '''
-        return self._cert_id
+        return self._id
 
-    @cert_id.setter
-    def cert_id(self, cert_id):
+    @id.setter
+    def id(self, certificate_id):
         '''
         This ID can be used to download the actual certificate later on.
         '''
-        self._cert_id = cert_id
+        self._id = certificate_id
 
     @property
     def issuer(self):
@@ -91,21 +97,18 @@ class Certificate():
         '''
         Just return the raw certificate.
         '''
+        if self._pem:
+            return self._pem
+
+        # Download the PEM ceritificate, may be the downloaded content
+        # will need to be verified somehow
+        content = Engine.get(self.id)
+
+        if not content:
+            return None
+
+        self._pem = decode_pem(content)
         return self._pem
-
-    @pem.setter
-    def pem(self, pem):
-        '''
-        Save and decode the certificate.
-        '''
-        self._pem = pem
-        self._decode()
-
-    def _decode(self):
-        '''
-        Decode the x509 certificate and extract all the fields.
-        '''
-        self._decoded_pem = x509.load_pem_x509_certificate(self._pem, default_backend())
 
 
 class Engine():
@@ -158,7 +161,7 @@ class Engine():
                 crt = Certificate()
                 # Set all the available data from crt.sh. Note that the certificate
                 # itself can be downloaded later
-                crt.cert_id = record['min_cert_id']
+                crt.id = record['min_cert_id']
                 crt.issuer = record['issuer_name']
 
                 # Need to convert the timestamps into epoch
@@ -173,14 +176,14 @@ class Engine():
         return None
 
     @staticmethod
-    def get(cert_id):
+    def get(certificate_id):
         '''
         Download the cert with the provided ID.
         '''
-        if not cert_id:
+        if not certificate_id:
             return None
 
-        result = requests.get(Engine.CRTSH_DOWNLOAD.format(cert_id),
+        result = requests.get(Engine.CRTSH_DOWNLOAD.format(certificate_id),
                               headers={'User-Agent': Engine.USER_AGENT})
 
         if result.ok:
