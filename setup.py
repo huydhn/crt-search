@@ -9,7 +9,7 @@ with open('README.md', 'r') as fh:
 
 setup(
     name='certificate-search',
-    version='0.1',
+    version='0.2',
     description='Certificate Transparency search',
     url='https://github.com/huydhn/crt-search',
     author='Huy Do',
