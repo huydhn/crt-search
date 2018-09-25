@@ -4,9 +4,12 @@ os:
 python:
   - '3.6'
 install:
-  - pip install pytest-pep8
+  - pip install pytest-pep8 pytest-cov
+  - pip install codecov
   - pip install cryptography requests
   - pip install .
 script:
   - pytest --pep8 -m pep8 crt/
-  - pytest tests/
+  - pytest --cov=./ tests/
+after_success:
+  - codecov --file coverage/lcov.info --disable search

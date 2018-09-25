@@ -1,7 +1,8 @@
 Certificate Search
 ------------------
 
-[![Build Status](https://travis-ci.org/huydhn/crt-search?branch=master)](https://travis-ci.org/huydhn/crt-search)
+[![Build Status](https://travis-ci.org/huydhn/crt-search.svg?branch=master)](https://travis-ci.org/huydhn/crt-search)
+[![codecov.io](https://codecov.io/gh/huydhn/crt-search/master.svg)](http://codecov.io/gh/huydhn/crt-search?branch=master)
 
 An unofficial wrapper to query [crt.sh](https://crt.sh/).
 
