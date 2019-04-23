@@ -4,11 +4,12 @@ os:
 python:
   - '3.6'
 install:
-  - pip install pytest-pep8 pytest-cov
+  - pip install pytest-pep8 pytest pytest-cov
   - pip install codecov
   - pip install cryptography requests
   - pip install -e .[tests]
 script:
+  - pytest --version
   - pytest --pep8 -m pep8 crt/
   - PYTHONPATH=$PWD:$PYTHONPATH pytest --cov=./ tests/
 after_success:
