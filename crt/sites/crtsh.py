@@ -3,7 +3,6 @@ Query crt.sh for the domain certificates. This site monitors the certificate
 logs from various source, e.g. Google, Cloudflare, DigiCert and makes the log
 searchable to the public.
 '''
-import json
 import re
 
 from datetime import datetime
@@ -137,15 +136,10 @@ class Engine():
         result = requests.get(Engine.CRTSH_SEARCH.format(domain, expired),
                               headers={'User-Agent': Engine.USER_AGENT})
 
+        # TODO: maybe use result.raise_for_status() to raise exceptions
+        # automatically?
         if result.ok:
-            # The site returns broken JSON so we need to fix it
-            content = result.content.decode('utf-8')
-            # by adding comma separator
-            content = re.sub(r'}\s*{', '},{', content)
-            # and turning it in to a JSON array
-            content = '[{}]'.format(content)
-
-            for record in json.loads(content):
+            for record in result.json():
                 # The record from crt.sh has the following format:
                 #
                 # {
