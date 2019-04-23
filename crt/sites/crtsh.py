@@ -128,7 +128,7 @@ class Engine():
         excluded_expired flag is set, only active certificates are returns.
         '''
         if not domain:
-            return None
+            return
 
         # crt.sh has the option to exlude all expired records
         expired = 'expired' if exclude_expired else ''
@@ -136,8 +136,6 @@ class Engine():
         result = requests.get(Engine.CRTSH_SEARCH.format(domain, expired),
                               headers={'User-Agent': Engine.USER_AGENT})
 
-        # TODO: maybe use result.raise_for_status() to raise exceptions
-        # automatically?
         if result.ok:
             for record in result.json():
                 # The record from crt.sh has the following format:
@@ -167,7 +165,7 @@ class Engine():
 
                 yield crt
 
-        return None
+        return
 
     @staticmethod
     def get(certificate_id):
@@ -175,7 +173,7 @@ class Engine():
         Download the cert with the provided ID.
         '''
         if not certificate_id:
-            return None
+            return
 
         result = requests.get(Engine.CRTSH_DOWNLOAD.format(certificate_id),
                               headers={'User-Agent': Engine.USER_AGENT})
@@ -183,4 +181,4 @@ class Engine():
         if result.ok:
             return result.content
 
-        return None
+        return

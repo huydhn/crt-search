@@ -1,10 +1,50 @@
 '''
 Searching certificates from as many sources as possible.
 '''
+import os
+import json
+from http import HTTPStatus
+
 import unittest
+from unittest import mock
 
 from cryptography.x509.oid import NameOID
 from crt.search import CertificateSearch, SUPPORTED_SITES
+
+
+def mock_crtsh(mock_content_path):
+    '''
+    Mock the JSON response from crt.sh.
+    '''
+    with open(mock_content_path) as fhandle:
+        return fhandle.read().encode()
+
+
+def mock_get(*args, **kwargs): # pylint: disable=unused-argument
+    '''
+    Mock the HTTP response instead of trying to get it from external source.
+    '''
+    class MockResponse: # pylint: disable=missing-docstring
+        def __init__(self, content, status_code):
+            self.content = content
+            self.status_code = status_code
+
+        def ok(self): # pylint: disable=invalid-name
+            return self.status_code == HTTPStatus.OK
+
+        def json(self):
+            return json.loads(self.content)
+
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    mock_dispatcher = {
+        'https://crt.sh/?q=github.com&output=json&exclude=': mock_crtsh('{}/mock/crt.sh_json'.format(dir_path)),
+        'https://crt.sh/?d=560083457': mock_crtsh('{}/mock/crt.sh_cert'.format(dir_path)),
+    }
+
+    if args[0] not in mock_dispatcher:
+        return MockResponse(None, HTTPStatus.NOT_FOUND)
+
+    return MockResponse(mock_dispatcher[args[0]], HTTPStatus.OK)
 
 
 class SearchTest(unittest.TestCase):
@@ -17,7 +57,8 @@ class SearchTest(unittest.TestCase):
         '''
         self.engines = {site: CertificateSearch(site=site) for site in SUPPORTED_SITES}
 
-    def test_search(self):
+    @mock.patch('requests.get', side_effect=mock_get)
+    def test_search(self, _):
         '''
         Looking for some certificates. Note that this test requires network
         connection to remote sites.

@@ -9,7 +9,6 @@ install:
   - pip install cryptography requests
   - pip install -e .[tests]
 script:
-  - pytest --version
   - pytest --pep8 -m pep8 crt/
   - PYTHONPATH=$PWD:$PYTHONPATH pytest --cov=./ tests/
 after_success:
